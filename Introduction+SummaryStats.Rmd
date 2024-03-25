@@ -1,0 +1,98 @@
+
+```{r}
+library(ggplot2)
+library(readxl)
+library(cowplot)
+library(tidyverse)
+library(lubridate)
+library(dplyr)
+```
+
+```{r}
+TempData <- read_excel("Temperature2011-2021 (1).xlsx")
+TempData <- TempData |>
+  mutate(
+    `Decimal Years` = date(date_decimal(`Decimal Years`))) |>
+  na.omit() 
+  
+  colnames(TempData) <- c("Date", "Temp", "SD")
+```
+
+```{r}
+head(TempData)
+```
+
+```{r}
+ggplot(TempData)+
+  geom_point(aes(x = Date, y= Temp)) +
+  labs(x = "Year", y = "Temperature") 
+```
+
+```{r}
+Summary <- TempData |>
+  group_by(year(Date)) |>
+  summarise(Temp = mean(Temp))
+```
+
+```{r}
+print(Summary)
+```
+
+```{r}
+ggplot(Summary)+
+  geom_point(aes(x = `year(Date)`, y= Temp)) +
+  labs(x = "Year", y = "Average Temperature") 
+```
+
+```{r}
+SeasonTempData <- TempData |>
+  mutate(
+    Season = case_when(
+      month(Date) == 12 | month(Date) == 1 | month(Date) == 2 ~ "Winter",
+      month(Date) == 3 | month(Date) == 4 | month(Date) == 5 ~ "Spring",
+      month(Date) == 6 | month(Date) == 7 | month(Date) == 8 ~ "Summer",
+      month(Date) == 9 | month(Date) == 10 | month(Date) == 11 ~ "Fall"
+    )
+  )
+```
+
+```{r}
+ggplot(SeasonTempData)+
+  geom_point(aes(x = Date, y= Temp, color = Season)) +
+  labs(x = "Year", y = "Temperature") 
+```
+
+```{r}
+SummarySeason <- SeasonTempData |>
+  group_by(year(Date), Season) |>
+  summarise(Temp = mean(Temp))
+```
+
+```{r}
+print(SummarySeason)
+```
+
+```{r}
+SummarySeasonSummer <- SummarySeason |>
+  filter(Season == "Summer")
+print(SummarySeasonSummer)
+```
+
+```{r}
+SummarySeasonSummer <- SummarySeason |>
+  filter(Season == "Winter")
+print(SummarySeasonSummer)
+```
+
+```{r}
+SummarySeasonSummer <- SummarySeason |>
+  filter(Season == "Spring")
+print(SummarySeasonSummer)
+```
+
+```{r}
+SummarySeasonSummer <- SummarySeason |>
+  filter(Season == "Fall")
+print(SummarySeasonSummer)
+```
+
