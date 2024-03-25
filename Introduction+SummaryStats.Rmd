@@ -6,6 +6,7 @@ library(cowplot)
 library(tidyverse)
 library(lubridate)
 library(dplyr)
+library(knitr)
 ```
 
 ```{r}
@@ -79,19 +80,19 @@ print(SummarySeasonSummer)
 ```
 
 ```{r}
-SummarySeasonSummer <- SummarySeason |>
+SummarySeasonWinter <- SummarySeason |>
   filter(Season == "Winter")
 print(SummarySeasonSummer)
 ```
 
 ```{r}
-SummarySeasonSummer <- SummarySeason |>
+SummarySeasonSpring <- SummarySeason |>
   filter(Season == "Spring")
 print(SummarySeasonSummer)
 ```
 
 ```{r}
-SummarySeasonSummer <- SummarySeason |>
+SummarySeasonFall <- SummarySeason |>
   filter(Season == "Fall")
 print(SummarySeasonSummer)
 ```
