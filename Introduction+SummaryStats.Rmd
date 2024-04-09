@@ -10,13 +10,14 @@ library(knitr)
 ```
 
 ```{r}
-TempData <- read_excel("Temperature2011-2021 (1).xlsx")
+TempData <- read_excel("~/WaterTemperature_TSA_FinalProject/picodataexport-temperatureNew.xlsx", col_names = FALSE,     col_types = c("numeric", "numeric", "numeric"))
+
+colnames(TempData) <- c("Date", "Temp", "SD")
+
 TempData <- TempData |>
   mutate(
-    `Decimal Years` = date(date_decimal(`Decimal Years`))) |>
-  na.omit() 
+    Date = date(date_decimal(Date))) 
   
-  colnames(TempData) <- c("Date", "Temp", "SD")
 ```
 
 ```{r}
