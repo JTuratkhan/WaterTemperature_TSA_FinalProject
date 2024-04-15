@@ -25,7 +25,7 @@ geometry: margin=2.54cm
 1. SARIMA model
 2. TBATS model
 3. ETS model
-4. Neural Network
+4. 
 5. SSES model
 
 ```{r, echo=FALSE}
@@ -38,6 +38,7 @@ library(dplyr)
 library(knitr)
 library(caret)
 library(forecast)
+library(zoo)
 ```
 
 ```{r, echo=FALSE}
@@ -86,17 +87,49 @@ as indicated by the initial significant lags. The insignificance of the PACF
 after the first few lags suggests that a simple AR model may be sufficient for 
 the non-seasonal part of the model, whereas the significant ACF at seasonal 
 lags points to the need for a seasonal AR component.
-
 ```{r, echo=FALSE}
-TempData <- TempData[order(TempData$Date),]
+print(length(TempData$Temp))
+```
+```{r, echo=FALSE}
+# Assuming TempData has columns Date and Temp
+TempData$Date <- as.Date(TempData$Date)
+zoo_ts <- zoo(TempData$Temp, order.by = TempData$Date)
 
-temperature_ts <- ts(TempData$Temp, frequency = 52, 
-                     start = c(year(TempData$Date[1]), 
-                               week(TempData$Date[1])))
+# Check the structure
+print(zoo_ts)
 ```
 
-```{r, echo=FALSE}}
-start(temperature_ts)
-end(temperature_ts)
+```{r, echo=FALSE}
+start(zoo_ts)
+end(zoo_ts)
+```
+```{r, echo=FALSE}
+split_index <- floor(0.8 * length(zoo_ts))
+train_set <- zoo_ts[1:split_index]
+test_set <- zoo_ts[(split_index + 1):length(zoo_ts)]
+```
+
+```{r, echo=FALSE}
+print(head(train_set))
+print(head(test_set))
+```
+
+```{r, echo=FALSE}
+start(train_set)
+end(train_set)
+```
+
+```{r, echo=FALSE}
+start(test_set)
+end(test_set)
+```
+
+
+```{r, echo=FALSE}
+fit <- auto.arima(temperature_ts, seasonal = TRUE)
+```
+
+```{r, echo=FALSE}
+print(fit)
 ```
 
