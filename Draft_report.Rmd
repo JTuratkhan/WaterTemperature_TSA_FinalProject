@@ -1,0 +1,102 @@
+---
+title: "Final Project"
+subtitle: "Water Temperature"
+author: "Zhanylai Turatkhan kyzy, Julia Kagiliery, Yilun Zhu"
+output: pdf_document
+geometry: margin=2.54cm
+---
+
+**Introduction**
+
+
+**Motivation/relevance of the study**
+
+
+**Objectives**
+
+
+**Dataset Information**
+
+
+**Methodology / Analysis**
+
+
+**Description**
+1. SARIMA model
+2. TBATS model
+3. ETS model
+4. Neural Network
+5. SSES model
+
+```{r, echo=FALSE}
+library(ggplot2)
+library(readxl)
+library(cowplot)
+library(tidyverse)
+library(lubridate)
+library(dplyr)
+library(knitr)
+library(caret)
+library(forecast)
+```
+
+```{r, echo=FALSE}
+TempData <- read_excel("Temperature2011-2021 (1).xlsx")
+TempData <- TempData |>
+  mutate(
+    `Decimal Years` = date(date_decimal(`Decimal Years`))) |>
+  na.omit() 
+  
+  colnames(TempData) <- c("Date", "Temp", "SD")
+```
+
+```{r, echo=FALSE}
+head(TempData)
+```
+
+```{r, echo=FALSE}
+set.seed(123)
+
+index <- createDataPartition(TempData$Temp, p=0.8, list=FALSE)
+trainingData <- TempData[index, ]
+testData <- TempData[-index, ]
+```
+
+```{r, echo=FALSE}
+ggplot(trainingData, aes(x=Date, y=Temp)) +
+  geom_point() +
+  theme_minimal() +
+  labs(title = "Temperature over time",
+       x = "Date",
+       y = "Temperature (°C)")
+```
+The plot illustrates the temperature variations over time. Here we can see potential seasonal patterns in the vertical alignment of points across the years.
+
+```{r, echo=FALSE}
+par(mar=c(3,3,3,0));par(mfrow=c(1,2))
+ACF_plot <- Acf(trainingData$Temp, lag=104, main="Autocorrelation of Temperature")
+PACF_plot <- Pacf(trainingData$Temp, lag=104, main="Partial autocorr. of Temperature")
+```
+
+The clear seasonal pattern in the ACF plot suggests that any time series 
+forecasting models should account for seasonal effects, likely including 
+seasonal differencing at lag 52 to remove the seasonal component.
+The PACF plot suggests considering a few autoregressive terms in the model, 
+as indicated by the initial significant lags. The insignificance of the PACF 
+after the first few lags suggests that a simple AR model may be sufficient for 
+the non-seasonal part of the model, whereas the significant ACF at seasonal 
+lags points to the need for a seasonal AR component.
+
+```{r, echo=FALSE}
+TempData <- TempData[order(TempData$Date),]
+
+temperature_ts <- ts(TempData$Temp, frequency = 52, 
+                     start = c(year(TempData$Date[1]), 
+                               week(TempData$Date[1])))
+```
+
+```{r, echo=FALSE}}
+start(temperature_ts)
+end(temperature_ts)
+```
+
