@@ -23,12 +23,14 @@ library(zoo)
 
 
 **Motivation/relevance of the study**
-
+Global ocean temperature is on the rise which has significant implications for this dynamic and productive biome. Among the many services the ocean provides, primary production (of oxygen) is among the most impoartant. In fact, approximately 50% of primary production of oxygen comes from marine phytoplankton. It has been proven (largely through work by Duke University Marine Lab's Dr. Zacakry Johnson and Dr. Dana Hunt) that these microbial systems change significantly with seasonal changes (which include dominatntly temperature changes, but also insolation and day length changes). These changes alter the way that the ocean cycles nutrients, stores carbon, and produces oxygen. Hence, temperature is an important variable in the consideration of much ocean modeling. This highlights the imporatnce of acurate temperature prediction. Undertsanding what future climate and temperature looks like allows for better prediction of what other ocean cycles will look like. 
 
 **Objectives**
 
+Our objective is to accurately model the monthly temperature of Piver's Island Coastal Observatory and produce reasonable forecasting at appropriate time scales.
 
 **Dataset Information**
+The following data comes from a long running time series study out at Piver's Island Coastal Observatory (PICO) which is located at the Duke University Marine Lab. The sytudy monitors the ambient conditions such as turbidity, pH, temperature, and salinity. For this study, only temperature was able to be included. The temperature is reported as mean monthly temperature. 
 
 ```{r, echo=FALSE}
 #We important the monthly temperature data
@@ -79,6 +81,8 @@ end(test_ts)
 ```
 **Methodology / Analysis**
 
+There are first a few important considerations as we get into modeling. The first is that this data is actually measured approximately weekly, meaning sometimes the lab samples multiple times in a week or skips a week. In order to account for this irregular time series frequency, we aggregated the data into monthly means to avoid unneccesary complications and misalign ment of our time series. 
+The second consideration we would like to acknowledge that climate change is certainly a a factor that plays a role in shifting trends, seasonal components, and general variability which may not be accurately reflected in our current data set which spans only approximately 10 years. Though the temperature in the region looks highly predicatble, future predictions must be cognizant that large prediction horizions are unreasonable. 
 
 **Description**
 1. SARIMA model
@@ -127,14 +131,19 @@ ets_model <- stlf(train_ts, h=h)
 ```
 
 ```{r}
-autoplot(temperature_ts, series = "Original") +
-  autolayer(ets_model, series = "STL + ETS", PI=FALSE) +
+ETS_for <- forecast(ets_model, h=h)
+
+autoplot(train_ts) +
+    autolayer(ETS_for, series = "ETS Forecast", PI = FALSE) +
+  autolayer(fitted(ets_model), series = "Model STL + ETS", PI=FALSE) +
+    autolayer(test_ts, series = "Test Data", PI=FALSE) +
   ylab("Water Temperature") +
   ggtitle("STL + ETS modeling")
+
 ```
 
 ```{r}
-stlf_accuracy <- accuracy(ets_model, test_ts)
+stlf_accuracy <- accuracy(ETS_for, test_ts)
 print(stlf_accuracy)
 ```
 
