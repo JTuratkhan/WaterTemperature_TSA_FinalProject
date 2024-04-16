@@ -1,0 +1,228 @@
+---
+title: "YilunZhuCode"
+output: pdf_document
+date: "2024-04-15"
+always_allow_html: true
+editor_options: 
+  chunk_output_type: inline
+  markdown: 
+    wrap: sentence
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,tidy.opts=list(width.cutoff=80), tidy=FALSE) 
+```
+
+```{r setup, include=FALSE}
+library(lubridate)
+library(ggplot2)
+library(forecast)  
+library(Kendall)
+library(tseries)
+library(outliers)
+library(tidyverse)
+library(smooth)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+Monthly_Data <- read_excel("Monthly Data_Temperature2011-2021.xlsx")
+#Transfer Date to only Y/M/D
+Monthly_Data$Date <- format(as.Date(Monthly_Data$Date), "%Y/%m")
+
+```
+
+```{r}
+ts_Temperature_Monthly <- msts(Monthly_Data$Temperature, 
+                           seasonal.periods =c(12),
+                           start=c(2011,1)
+                           )
+#create a subset for training purpose
+n_for = 24
+ts_Temperature_Monthly_train <- subset(ts_Temperature_Monthly,
+                                   end = length(ts_Temperature_Monthly)-n_for)
+
+#create a subset for testing purpose
+ts_Temperature_Monthly_test <- subset(ts_Temperature_Monthly,
+                                   start = length(ts_Temperature_Monthly)-n_for)
+```
+
+```{r}
+#NN_fit <- nnetar(ts_act_power_daily_train,p=1,P=1)
+NN_fit <- nnetar(ts_Temperature_Monthly_train,
+                 p=1,
+                 P=1,
+                 xreg=fourier(ts_Temperature_Monthly_train, K=c(6)))
+
+#NN_for <- forecast(NN_fit, h=6) 
+NN_for <- forecast(NN_fit, h=24,xreg=fourier(ts_Temperature_Monthly_train, 
+                                          K=c(6),h=24))
+
+#Plot foresting results
+autoplot(NN_for) +
+  ylab("Temperature C") 
+
+#Plot model + observed data
+autoplot(ts_Temperature_Monthly_test) +
+  autolayer(NN_for, series="Neural Network",PI=FALSE)+
+  ylab("Temperature") 
+
+autoplot(ts_Temperature_Monthly) +
+  autolayer(NN_for$fitted, series="NN fit",PI=FALSE) +
+  autolayer(NN_for$mean, series="NN forecast",PI=FALSE)+
+  ylab("Temperature") 
+
+checkresiduals(NN_fit)
+```
+
+
+```{r, echo=FALSE}
+SSES_seas <- es(ts_Temperature_Monthly_train,model="ZZZ", h=24,holdout=FALSE)
+plot(SSES_seas)
+checkresiduals(SSES_seas)
+
+#Plot model + observed data
+autoplot(ts_Temperature_Monthly) +
+  autolayer(SSES_seas$fitted, series="SSES Fit",PI=FALSE)+
+  autolayer(SSES_seas$forecast, series="SSES Forecast",PI=FALSE)+
+  ylab("Temperature") 
+```
+
+
+
+
+```{r TBATS, echo=TRUE, message=FALSE, warning=FALSE}
+# TBATS can take time to fit
+TBATS_fit <- tbats(ts_Temperature_Monthly_train)
+
+TBATS_for <- forecast(TBATS_fit, h=24)
+
+#Plot foresting results
+autoplot(TBATS_for) +
+  ylab("Temperature") 
+
+#Plot test model + observed data
+autoplot(ts_Temperature_Monthly_test) +
+  autolayer(TBATS_for, series="TBATS Forecast",PI=FALSE)+
+  ylab("Temperature") 
+
+#Plot model + observed data
+autoplot(ts_Temperature_Monthly) +
+  autolayer(TBATS_fit$fitted.values, series="TBATS Fit",PI=FALSE)+
+  autolayer(TBATS_for, series="TBATS Forecast",PI=FALSE)+
+  ylab("Temperature") 
+
+checkresiduals(TBATS_fit)
+```
+```{r ETS, echo=TRUE, message=FALSE, warning=FALSE}
+#Fit and forecast STL + ETS model to data
+ETS_fit <-  stlf(ts_Temperature_Monthly_train,h=24)
+#Since stlf did both model+forcastm so h =365 is required to specify the edge of forcast
+
+#Plot foresting results
+autoplot(ETS_fit) + ylab("Temperature")
+
+#Plot model + observed data
+autoplot(ts_Temperature_Monthly) +
+  autolayer(ETS_fit, series="STL + ETS",PI=FALSE) +
+  ylab("Temperature")
+
+#Plot model + observed data
+autoplot(ts_Temperature_Monthly) +
+  autolayer(ETS_fit$fitted, series="STL + ETS training",PI=FALSE) +
+  autolayer(ETS_fit$mean, series="STL + ETS test",PI=FALSE) +
+  ylab("Temperature")
+
+checkresiduals(ETS_fit)
+#alternative coding if you don't need to save the objects
+#ts_act_power_daily_train %>% stlf(h=365) %>% autoplot() 
+#very easy to read/run/implement 
+#but you don't have anything stored on your environment
+
+```
+
+```{r ARIMA, echo=TRUE, message=FALSE, warning=FALSE}
+#Fit arima model with fourier terms as exogenous regressors
+# seasonal = FALSE is the same as P=D=Q=0
+# play with K by changing it to K=c(2,2), K=c(2,4), K=c(2,6), etc. The higher the K the longer it will take to converge, because R will try more models.
+
+ARIMA_Four_fit <- auto.arima(ts_Temperature_Monthly_train, 
+                             seasonal=TRUE, 
+                             lambda=0,
+                             xreg=fourier(ts_Temperature_Monthly_train, 
+                                          K=c(6))
+                             )
+
+#Forecast with ARIMA fit
+#also need to specify h for fourier terms
+ARIMA_Four_for <- forecast(ARIMA_Four_fit,
+                           xreg=fourier(ts_Temperature_Monthly_train,
+                                        K=c(6),
+                                        h=24),
+                           h=24
+                           ) 
+
+#Plot foresting results
+autoplot(ARIMA_Four_for) + ylab("Temperature")
+
+#Plot model + observed data
+autoplot(ts_Temperature_Monthly) +
+  autolayer(ARIMA_Four_for, series="ARIMA_FOURIER",PI=FALSE) +
+  ylab("Temperature")
+
+```
+```{r}
+
+#Model 1: STL + ETS
+ETS_scores <- accuracy(ETS_fit$mean,ts_Temperature_Monthly_test)  
+
+#Model 2: ARIMA + Fourier 
+ARIMA_scores <- accuracy(ARIMA_Four_for$mean,ts_Temperature_Monthly_test)
+
+# Model 3:  TBATS 
+TBATS_scores <- accuracy(TBATS_for$mean,ts_Temperature_Monthly_test)
+
+# Model 4:  Neural Network 
+NN_scores <- accuracy(NN_for$mean,ts_Temperature_Monthly_test)
+
+# Model 5:  SSES 
+SSES_scores <- accuracy(SSES_seas$forecast,ts_Temperature_Monthly_test)
+
+```
+
+```{r}
+#create data frame
+scores <- as.data.frame(
+  rbind(ETS_scores, ARIMA_scores, TBATS_scores, NN_scores)
+  )
+row.names(scores) <- c("STL+ETS", "ARIMA+Fourier","TBATS","NN","SSES")
+
+#choose model with lowest RMSE
+best_model_index <- which.min(scores[,"RMSE"])
+cat("The best model by RMSE is:", row.names(scores[best_model_index,]))                       
+```
+
+
+```{r}
+autoplot(ts_Temperature_Monthly) +
+  autolayer(ETS_fit, PI=FALSE, series="STL+ETS") +
+  autolayer(ARIMA_Four_for, PI=FALSE, series="ARIMA + Fourier") +
+  autolayer(TBATS_for,PI=FALSE, series="TBATS") +
+  autolayer(NN_for,PI=FALSE, series="NN") +
+  xlab("Monthly") + ylab("Water Temperature") +
+  guides(colour=guide_legend(title="Forecast"))
+
+```
+
+
+
+
+
+
+
+
