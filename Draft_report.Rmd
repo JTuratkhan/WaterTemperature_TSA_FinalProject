@@ -6,28 +6,6 @@ output: pdf_document
 geometry: margin=2.54cm
 ---
 
-**Introduction**
-
-
-**Motivation/relevance of the study**
-
-
-**Objectives**
-
-
-**Dataset Information**
-
-
-**Methodology / Analysis**
-
-
-**Description**
-1. SARIMA model
-2. TBATS model
-3. ETS model
-4. SSES model
-5. NN
-
 ```{r, echo=FALSE}
 library(ggplot2)
 library(readxl)
@@ -41,41 +19,81 @@ library(forecast)
 library(zoo)
 ```
 
+**Introduction**
+
+
+**Motivation/relevance of the study**
+
+
+**Objectives**
+
+
+**Dataset Information**
+
 ```{r, echo=FALSE}
-file_path <- "/home/guest/TSA_Janka/WaterTemperature_TSA_FinalProject/Monthly Data_Temperature2011-2021.xlsx"
+#We important the monthly temperature data
+file_path <- "~/WaterTemperature_TSA_FinalProject/Monthly Data_Temperature2011-2021.xlsx"
 temperature_data <- read_excel(file_path, sheet = "Sheet1")
-head(temperature_data)
 ```
+
 ```{r, echo=FALSE}
+#Transforming the data into a time series which starts in Jan of 2011
 temperature_ts <- ts(temperature_data$Temperature,
                      start = c(2011, 1), frequency = 12)
 ```
 
 ```{r, echo=FALSE}
+#Upon initial examination, the data appears to be strongly seasonal with very little trend.
 plot(temperature_ts)
 ```
+
 ```{r}
+#The ACF and Pacf tell us that there is ovbious and strong seasonality and some auto-regressive component up to about 6 lags.
+P1 <-Acf(temperature_ts)
+P2 <- Pacf(temperature_ts)
+```
+
+HERE WE SHOULD DECOMPOSE THE DATA.
+
+
+```{r}
+#confirming that timeseries transformation works as expected.
 str(temperature_ts)
 ```
+
+
+In the lines of code below we split the existing data set into a training data set and a test set. 80% of the data is training and the last 20% is used to validate the model.
 ```{r}
+#Making Training and Test sets
 split_point <- round(length(temperature_ts) * 0.8)
 train_ts <- window(temperature_ts, end=c(2019, 8))
 test_ts <- window(temperature_ts, start=c(2019, 9))
 ```
+
 ```{r}
+#Confirms Training and Test sets were correctly made
 start(train_ts)
 end(train_ts)
-```
-```{r}
 start(test_ts)
 end(test_ts)
 ```
+**Methodology / Analysis**
 
+
+**Description**
+1. SARIMA model
+2. TBATS model
+3. ETS model
+4. SSES model
+5. NN
+
+*SARIMA Modeling*
 ```{r, echo=FALSE}
 #SARIMA autofit
 sarima_model <- auto.arima(train_ts)
 print(summary(sarima_model))
 ```
+
 ```{r}
 checkresiduals(sarima_model)
 ```
@@ -84,6 +102,7 @@ checkresiduals(sarima_model)
 h <- length(test_ts)
 sarima_forecast <- forecast(sarima_model, h=h)
 ```
+
 ```{r}
 autoplot(temperature_ts, series = "Original") +
   autolayer(sarima_forecast$mean, series = "SARIMA forecast") +
@@ -94,14 +113,19 @@ autoplot(temperature_ts, series = "Original") +
 ```{r}
 checkresiduals(sarima_forecast)
 ```
+
 ```{r}
-forecast_accuracy <- accuracy(sarima_forecast, test_ts)
-print(forecast_accuracy)
+forecast_accuracySarima <- accuracy(sarima_forecast, test_ts)
+print(forecast_accuracySarima)
 ```
+
+*STL + ETS Modeling*
+
 ```{r}
 # STL + ETS
 ets_model <- stlf(train_ts, h=h)
 ```
+
 ```{r}
 autoplot(temperature_ts, series = "Original") +
   autolayer(ets_model, series = "STL + ETS", PI=FALSE) +
@@ -113,7 +137,36 @@ autoplot(temperature_ts, series = "Original") +
 stlf_accuracy <- accuracy(ets_model, test_ts)
 print(stlf_accuracy)
 ```
+
 ```{r}
 checkresiduals(ets_model)
+```
+
+*TBATS Modeling*
+
+```{r}
+model_tbats <- tbats(train_ts)
+print(summary(model_tbats))
+```
+
+```{r}
+checkresiduals(model_tbats)
+```
+
+
+```{r}
+TBATS_for <- forecast(model_tbats, h=h)
+
+autoplot(train_ts) +
+  autolayer(TBATS_for, series = "TBATS Forecast", PI = FALSE) +
+  autolayer(test_ts, series = "Test Data", PI = FALSE) +
+  autolayer(fitted(model_tbats), series = "Model", PI = FALSE) +
+  ylab("Water Temperature") +
+  ggtitle("TBATS Modeling")
+
+```
+```{r}
+TBATS_accuracy <- accuracy(TBATS_for, test_ts)
+print(TBATS_accuracy)
 ```
 
