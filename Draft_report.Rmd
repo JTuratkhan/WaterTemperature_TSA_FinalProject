@@ -25,8 +25,8 @@ geometry: margin=2.54cm
 1. SARIMA model
 2. TBATS model
 3. ETS model
-5. SSES model
-6. Naive
+4. SSES model
+5. NN
 
 ```{r, echo=FALSE}
 library(ggplot2)
@@ -53,5 +53,67 @@ temperature_ts <- ts(temperature_data$Temperature,
 
 ```{r, echo=FALSE}
 plot(temperature_ts)
+```
+```{r}
+str(temperature_ts)
+```
+```{r}
+split_point <- round(length(temperature_ts) * 0.8)
+train_ts <- window(temperature_ts, end=c(2019, 8))
+test_ts <- window(temperature_ts, start=c(2019, 9))
+```
+```{r}
+start(train_ts)
+end(train_ts)
+```
+```{r}
+start(test_ts)
+end(test_ts)
+```
+
+```{r, echo=FALSE}
+#SARIMA autofit
+sarima_model <- auto.arima(train_ts)
+print(summary(sarima_model))
+```
+```{r}
+checkresiduals(sarima_model)
+```
+
+```{r}
+h <- length(test_ts)
+sarima_forecast <- forecast(sarima_model, h=h)
+```
+```{r}
+autoplot(temperature_ts, series = "Original") +
+  autolayer(sarima_forecast$mean, series = "SARIMA forecast") +
+  ylab("Water Temperature") +
+  ggtitle("SARIMA modeling")
+```
+
+```{r}
+checkresiduals(sarima_forecast)
+```
+```{r}
+forecast_accuracy <- accuracy(sarima_forecast, test_ts)
+print(forecast_accuracy)
+```
+```{r}
+# STL + ETS
+ets_model <- stlf(train_ts, h=h)
+```
+```{r}
+autoplot(temperature_ts, series = "Original") +
+  autolayer(ets_model, series = "STL + ETS", PI=FALSE) +
+  ylab("Water Temperature") +
+  ggtitle("STL + ETS modeling")
+```
+
+```{r}
+stlf_accuracy <- accuracy(ets_model, test_ts)
+print(stlf_accuracy)
+```
+```{r}
+checkresiduals(ets_model)
 ```
 
