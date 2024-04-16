@@ -42,6 +42,8 @@ ts_Temperature_Monthly <- msts(Monthly_Data$Temperature,
                            seasonal.periods =c(12),
                            start=c(2011,1)
                            )
+decomposed_Temperature <- decompose(ts_Temperature_Monthly, type = "additive")
+plot(decomposed_Temperature)
 #create a subset for training purpose
 n_for = 24
 ts_Temperature_Monthly_train <- subset(ts_Temperature_Monthly,
@@ -50,6 +52,13 @@ ts_Temperature_Monthly_train <- subset(ts_Temperature_Monthly,
 #create a subset for testing purpose
 ts_Temperature_Monthly_test <- subset(ts_Temperature_Monthly,
                                    start = length(ts_Temperature_Monthly)-n_for)
+
+MKTest <- MannKendall(ts_Temperature_Monthly)
+print(summary(MKTest))
+
+
+print(adf.test(ts_Temperature_Monthly, alternative = "stationary"))
+
 ```
 
 ```{r}
