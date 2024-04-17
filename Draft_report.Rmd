@@ -17,6 +17,10 @@ library(knitr)
 library(caret)
 library(forecast)
 library(zoo)
+library(Kendall)
+library(tseries)
+library(outliers)
+library(smooth)
 ```
 
 **Introduction**
@@ -56,7 +60,16 @@ P2 <- Pacf(temperature_ts)
 ```
 
 HERE WE SHOULD DECOMPOSE THE DATA.
+```{r}
+decomposed_Temperature <- decompose(temperature_ts, type = "additive")
+plot(decomposed_Temperature)
 
+#Testing if the trend is stationary
+MKTest <- MannKendall(temperature_ts)
+print(summary(MKTest))
+
+print(adf.test(temperature_ts, alternative = "stationary"))
+```
 
 ```{r}
 #confirming that timeseries transformation works as expected.
@@ -86,10 +99,12 @@ The second consideration we would like to acknowledge that climate change is cer
 
 **Description**
 1. SARIMA model
-2. TBATS model
-3. ETS model
-4. SSES model
-5. NN
+2. Arima+Fourier
+3. TBATS model
+4. ETS model
+5. SSES model
+6. Neural Network
+
 
 *SARIMA Modeling*
 ```{r, echo=FALSE}
@@ -119,8 +134,37 @@ checkresiduals(sarima_forecast)
 ```
 
 ```{r}
-forecast_accuracySarima <- accuracy(sarima_forecast, test_ts)
+forecast_accuracySarima <- accuracy(sarima_forecast)
 print(forecast_accuracySarima)
+```
+
+*ARIMA+fourier Modeling*
+```{r ARIMA, echo=TRUE, message=FALSE, warning=FALSE}
+ARIMA_Four_fit <- auto.arima(train_ts, 
+                             seasonal=TRUE, 
+                             lambda=0,
+                             xreg=fourier(train_ts, 
+                                          K=c(6))
+                             )
+
+ARIMA_Four_for <- forecast(ARIMA_Four_fit,
+                           xreg=fourier(train_ts,
+                                        K=c(6),
+                                        h=h),
+                           h=h
+                           ) 
+
+autoplot(ARIMA_Four_for) + ylab("Temperature")
+
+autoplot(temperature_ts) +
+  autolayer(ARIMA_Four_fit$fitted, series="ARIMA_FOURIER Fitted",PI=FALSE) +
+  autolayer(ARIMA_Four_for, series="ARIMA_FOURIER Forecast",PI=FALSE) +
+  ylab("Temperature")
+
+checkresiduals(ARIMA_Four_for)
+
+forecast_accuracyARIMA_Four <- accuracy(ARIMA_Four_for)
+print(forecast_accuracyARIMA_Four)
 ```
 
 *STL + ETS Modeling*
@@ -143,7 +187,7 @@ autoplot(train_ts) +
 ```
 
 ```{r}
-stlf_accuracy <- accuracy(ETS_for, test_ts)
+stlf_accuracy <- accuracy(ETS_for)
 print(stlf_accuracy)
 ```
 
@@ -175,7 +219,82 @@ autoplot(train_ts) +
 
 ```
 ```{r}
-TBATS_accuracy <- accuracy(TBATS_for, test_ts)
+TBATS_accuracy <- accuracy(TBATS_for)
 print(TBATS_accuracy)
+```
+
+*SSES*
+```{r, echo=FALSE}
+SSES_seas <- es(train_ts,model="ZZZ", h= h,holdout=FALSE)
+plot(SSES_seas)
+checkresiduals(SSES_seas)
+
+#Plot model + observed data
+autoplot(temperature_ts) +
+  autolayer(SSES_seas$fitted, series="SSES Fit",PI=FALSE)+
+  autolayer(SSES_seas$forecast, series="SSES Forecast",PI=FALSE)+
+  ylab("Temperature") 
+
+forecast_accuracy_SSES <- accuracy(SSES_seas)
+```
+
+*Neural Network*
+```{r}
+NN_fit <- nnetar(train_ts,
+                 p=1,
+                 P=1,
+                 xreg=fourier(train_ts, K=c(6)))
+
+NN_for <- forecast(NN_fit, h= h,xreg=fourier(train_ts, 
+                                          K=c(6),h= h))
+
+autoplot(NN_for) +
+  ylab("Temperature C") 
+
+autoplot(test_ts) +
+  autolayer(NN_for, series="Neural Network",PI=FALSE)+
+  ylab("Temperature") 
+
+autoplot(temperature_ts) +
+  autolayer(NN_for$fitted, series="NN fit",PI=FALSE) +
+  autolayer(NN_for$mean, series="NN forecast",PI=FALSE)+
+  ylab("Temperature") 
+
+checkresiduals(NN_fit)
+
+forecast_accuracy_NN <- accuracy(NN_for)
+```
+*Create Scores*
+```{r}
+
+#Model 1: Sarima
+Sarima_scores <- accuracy(sarima_forecast$mean, test_ts) 
+
+#Model 2: ARIMA + Fourier
+ArimaFour_scores <- accuracy(ARIMA_Four_for$mean, test_ts)  
+
+#Model 3: ETS+STL 
+stlf_scores <- accuracy(ETS_for$mean, test_ts)
+
+# Model 4:  TBATS 
+TBATS_scores <- accuracy(TBATS_for$mean, test_ts)
+
+# Model 5:  SSES 
+SSES_scores <- accuracy(NN_for$mean, test_ts)
+
+# Model 6:  Neural Network 
+NN_scores <- accuracy(SSES_seas$forecast, test_ts)
+
+```
+
+*Create Score table*
+```{r}
+scores <- as.data.frame(
+  rbind(Sarima_scores, ArimaFour_scores, stlf_scores, TBATS_scores, SSES_scores, NN_scores)
+  )
+row.names(scores) <- c("Sarima", "ARIMA+Fourier","ETS+STL","TBATS","SSES", "NN")
+
+best_model_index <- which.min(scores[,"RMSE"])
+cat("The best model by RMSE is:", row.names(scores[best_model_index,]))                       
 ```
 

@@ -52,7 +52,7 @@ ts_Temperature_Monthly_train <- subset(ts_Temperature_Monthly,
 #create a subset for testing purpose
 ts_Temperature_Monthly_test <- subset(ts_Temperature_Monthly,
                                    start = length(ts_Temperature_Monthly)-n_for)
-
+#Testing if the trend is stationary
 MKTest <- MannKendall(ts_Temperature_Monthly)
 print(summary(MKTest))
 
