@@ -27,18 +27,86 @@ library(smooth)
 
 
 **Motivation/relevance of the study**
-Global ocean temperature is on the rise which has significant implications for this dynamic and productive biome. Among the many services the ocean provides, primary production (of oxygen) is among the most impoartant. In fact, approximately 50% of primary production of oxygen comes from marine phytoplankton. It has been proven (largely through work by Duke University Marine Lab's Dr. Zacakry Johnson and Dr. Dana Hunt) that these microbial systems change significantly with seasonal changes (which include dominatntly temperature changes, but also insolation and day length changes). These changes alter the way that the ocean cycles nutrients, stores carbon, and produces oxygen. Hence, temperature is an important variable in the consideration of much ocean modeling. This highlights the imporatnce of acurate temperature prediction. Undertsanding what future climate and temperature looks like allows for better prediction of what other ocean cycles will look like. 
+Global ocean temperature is on the rise which has significant implications for 
+this dynamic and productive biome. Among the many services the ocean provides, 
+primary production (of oxygen) is among the most important. In fact, 
+approximately 50% of primary production of oxygen comes from marine 
+phytoplankton. It has been proven (largely through work by Duke University 
+Marine Lab's Dr. Zacakry Johnson and Dr. Dana Hunt) that these microbial 
+systems change significantly with seasonal changes (which include dominantly temperature changes, but also isolation and day length changes). These changes 
+alter the way that the ocean cycles nutrients, stores carbon, and produces 
+oxygen. Hence, temperature is an important variable in the consideration of 
+much ocean modeling. This highlights the importance of accurate temperature 
+prediction. Understanding what future climate and temperature looks like 
+allows for better prediction of what other ocean cycles will look like. 
 
 **Objectives**
 
-Our objective is to accurately model the monthly temperature of Piver's Island Coastal Observatory and produce reasonable forecasting at appropriate time scales.
+Our objective is to accurately model the monthly temperature of Piver's 
+Island Coastal Observatory and produce reasonable forecasting at appropriate 
+time scales.
 
 **Dataset Information**
-The following data comes from a long running time series study out at Piver's Island Coastal Observatory (PICO) which is located at the Duke University Marine Lab. The sytudy monitors the ambient conditions such as turbidity, pH, temperature, and salinity. For this study, only temperature was able to be included. The temperature is reported as mean monthly temperature. 
+
+The following data comes from a long running time series study out at Piver's 
+Island Coastal Observatory (PICO) which is located at the Duke University 
+Marine Lab. The sytudy monitors the ambient conditions such as turbidity, pH, temperature, and salinity. For this study, only temperature was able to be 
+included. The temperature is reported as mean monthly temperature. 
+
+**Methodology / Analysis**
+
+There are first a few important considerations as we get into modeling. The 
+first is that this data is actually measured approximately weekly, meaning 
+sometimes the lab samples multiple times in a week or skips a week. In order 
+to account for this irregular time series frequency, we aggregated the data 
+into monthly means to avoid unnecessary complications and misalignment of our 
+time series. 
+The second consideration we would like to acknowledge that climate change is 
+certainly a a factor that plays a role in shifting trends, seasonal components, 
+and general variability which may not be accurately reflected in our current 
+data set which spans only approximately 11 years. Though the temperature in the 
+region looks highly predictable, future predictions must be cognizant that large prediction horizons are unreasonable. 
+
+**Description**
+
+**1. SARIMA model:** The Seasonal Autoregressive Integrated Moving Average 
+(SARIMA) model expands upon the ARIMA framework to address seasonality in 
+univariate data sets. It incorporates both non-seasonal and seasonal elements 
+in its predictions, allowing it to capture complex patterns that recur over 
+fixed periods.
+**2. Arima+Fourier:** This approach combines the ARIMA model with Fourier series 
+to enhance the modeling of time series with complex seasonal patterns. 
+ARIMA captures the autocorrelations in the data, while the Fourier terms allow 
+for the approximation of seasonal cycles of various lengths and complexities. 
+This hybrid model is especially useful when the seasonality is not strictly 
+periodic or involves multiple frequencies.
+**3. TBATS model:** Designed for forecasting time series with intricate seasonal patterns, the TBATS model employs exponential smoothing as its core technique. 
+It thoroughly explores a variety of specifications, including those with and 
+without a Box-Cox transformation, the presence or absence of a trend, trend 
+damping options, and an ARIMA(p,q) component for the residuals. The model also evaluates different harmonic levels for seasonalities. The best-fitting model 
+is determined by the lowest Akaike Information Criterion (AIC).
+**4. ETS model:** This univariate forecasting method, known as Exponential 
+Smoothing State Space Model (ETS), emphasizes trend and seasonality components 
+within the time series data. It is particularly adept at capturing patterns 
+that evolve over time.
+**5. SSES model:** The State Space Exponential Smoothing (SSES) model extends 
+the classic exponential smoothing approach by incorporating distribution 
+assumptions about the error terms, which aids in the computation of prediction 
+intervals. It considers both additive and multiplicative error structures 
+within the state space modeling framework.
+**6. Neural Network:** The Neural Network model facilitates the identification 
+of complex and nonlinear relationships between the dependent variable and its predictors. Its versatile architecture can adapt to a wide array of data 
+patterns.
+
+```{r, echo=FALSE}
+#file_path <- file.path(getwd(), "Monthly Data_Temperature2011-2021.xlsx")
+#print(file_path)
+```
+
 
 ```{r, echo=FALSE}
 #We important the monthly temperature data
-file_path <- "~/WaterTemperature_TSA_FinalProject/Monthly Data_Temperature2011-2021.xlsx"
+file_path <- "/home/guest/TSA_Janka/WaterTemperature_TSA_FinalProject/Monthly Data_Temperature2011-2021.xlsx"
 temperature_data <- read_excel(file_path, sheet = "Sheet1")
 ```
 
@@ -50,17 +118,45 @@ temperature_ts <- ts(temperature_data$Temperature,
 
 ```{r, echo=FALSE}
 #Upon initial examination, the data appears to be strongly seasonal with very little trend.
-plot(temperature_ts)
+plot(temperature_ts, main = "Original dataset")
 ```
-
-```{r}
+The temperature shows cyclical behavior with peaks and troughs that correspond 
+to expected seasonal variations. The amplitude of these oscillations appears 
+consistent over the years, indicating a stable seasonal effect without 
+significant year-over-year changes in peak or trough temperatures.
+From a visual inspection, there are no apparent outliers or disruptions in the 
+seasonal pattern, suggesting that the dataset is clean and well-maintained. 
+The regularity of the pattern would likely make it suitable for forecasting 
+using seasonal models, such as SARIMA or TBATS, which could exploit the 
+periodicity inherent in the data.
+```{r, echo=FALSE}
 #The ACF and Pacf tell us that there is ovbious and strong seasonality and some auto-regressive component up to about 6 lags.
-P1 <-Acf(temperature_ts)
-P2 <- Pacf(temperature_ts)
+P1 <-Acf(temperature_ts, main = "ACF on original data")
 ```
+The graph illustrates the Autocorrelation Function (ACF) applied to the original temperature data set. Autocorrelation is a mathematical representation of the 
+degree of similarity between a given time series and a lagged version of itself 
+over successive time intervals. The ACF is plotted against various lag values, 
+which span from 0 to 24.
+The y-axis represents the autocorrelation coefficient, ranging from -0.5 to 0.5, 
+while the x-axis represents the lag in terms of the number of time units. Each 
+vertical bar corresponds to the autocorrelation coefficient at a specific lag.
+Notably, the graph shows a pattern of spikes at regular intervals, which 
+suggests a seasonal pattern in the data. The presence of these spikes at 
+consistent intervals can be indicative of the seasonality in the dataset, which correlates with the seasonal fluctuations seen in the time series plot of 
+the original dataset.
+The blue dashed lines represent the significance bounds. Any spike that extends 
+beyond these bounds is considered statistically significant. In this ACF plot, 
+several lags have autocorrelation values that cross the significance threshold,
+confirming that the data exhibit a strong seasonal component at these lags.
 
-HERE WE SHOULD DECOMPOSE THE DATA.
-```{r}
+```{r, echo=FALSE}}
+P2 <- Pacf(temperature_ts, main = "PACF on original data")
+```
+In this PACF plot, most of the spikes are within the significance bounds, 
+suggesting that most of the autocorrelations in the original data can be 
+accounted for by the immediate preceding values.
+
+```{r, echo=FALSE}
 decomposed_Temperature <- decompose(temperature_ts, type = "additive")
 plot(decomposed_Temperature)
 
@@ -70,41 +166,30 @@ print(summary(MKTest))
 
 print(adf.test(temperature_ts, alternative = "stationary"))
 ```
-
-```{r}
+The Augmented Dickey-Fuller Test result indicates a Dickey-Fuller statistic of 
+-11.153 with a lag order of 5, and a p-value of 0.01, suggesting that the null 
+hypothesis of a unit root can be rejected and the time series is stationary.
+```{r, echo=FALSE}
 #confirming that timeseries transformation works as expected.
-str(temperature_ts)
+#str(temperature_ts)
 ```
 
-
-In the lines of code below we split the existing data set into a training data set and a test set. 80% of the data is training and the last 20% is used to validate the model.
-```{r}
+For the forecasting purposes, the data was split into training and test data
+following a proportion of 80/20.
+```{r, echo=FALSE}
 #Making Training and Test sets
 split_point <- round(length(temperature_ts) * 0.8)
 train_ts <- window(temperature_ts, end=c(2019, 8))
 test_ts <- window(temperature_ts, start=c(2019, 9))
 ```
 
-```{r}
+```{r, echo=FALSE}
 #Confirms Training and Test sets were correctly made
-start(train_ts)
-end(train_ts)
-start(test_ts)
-end(test_ts)
+#start(train_ts)
+#end(train_ts)
+#start(test_ts)
+#end(test_ts)
 ```
-**Methodology / Analysis**
-
-There are first a few important considerations as we get into modeling. The first is that this data is actually measured approximately weekly, meaning sometimes the lab samples multiple times in a week or skips a week. In order to account for this irregular time series frequency, we aggregated the data into monthly means to avoid unneccesary complications and misalign ment of our time series. 
-The second consideration we would like to acknowledge that climate change is certainly a a factor that plays a role in shifting trends, seasonal components, and general variability which may not be accurately reflected in our current data set which spans only approximately 10 years. Though the temperature in the region looks highly predicatble, future predictions must be cognizant that large prediction horizions are unreasonable. 
-
-**Description**
-1. SARIMA model
-2. Arima+Fourier
-3. TBATS model
-4. ETS model
-5. SSES model
-6. Neural Network
-
 
 *SARIMA Modeling*
 ```{r, echo=FALSE}
@@ -113,27 +198,27 @@ sarima_model <- auto.arima(train_ts)
 print(summary(sarima_model))
 ```
 
-```{r}
+```{r, echo=FALSE}
 checkresiduals(sarima_model)
 ```
 
-```{r}
+```{r, echo=FALSE}
 h <- length(test_ts)
 sarima_forecast <- forecast(sarima_model, h=h)
 ```
 
-```{r}
+```{r, echo=FALSE}
 autoplot(temperature_ts, series = "Original") +
   autolayer(sarima_forecast$mean, series = "SARIMA forecast") +
   ylab("Water Temperature") +
   ggtitle("SARIMA modeling")
 ```
 
-```{r}
+```{r, echo=FALSE}
 checkresiduals(sarima_forecast)
 ```
 
-```{r}
+```{r, echo=FALSE}
 forecast_accuracySarima <- accuracy(sarima_forecast)
 print(forecast_accuracySarima)
 ```
@@ -169,12 +254,12 @@ print(forecast_accuracyARIMA_Four)
 
 *STL + ETS Modeling*
 
-```{r}
+```{r, echo=FALSE}
 # STL + ETS
 ets_model <- stlf(train_ts, h=h)
 ```
 
-```{r}
+```{r, echo=FALSE}
 ETS_for <- forecast(ets_model, h=h)
 
 autoplot(train_ts) +
@@ -186,28 +271,28 @@ autoplot(train_ts) +
 
 ```
 
-```{r}
+```{r, echo=FALSE}
 stlf_accuracy <- accuracy(ETS_for)
 print(stlf_accuracy)
 ```
 
-```{r}
+```{r, echo=FALSE}
 checkresiduals(ets_model)
 ```
 
 *TBATS Modeling*
 
-```{r}
+```{r, echo=FALSE}
 model_tbats <- tbats(train_ts)
 print(summary(model_tbats))
 ```
 
-```{r}
+```{r, echo=FALSE}
 checkresiduals(model_tbats)
 ```
 
 
-```{r}
+```{r, echo=FALSE}
 TBATS_for <- forecast(model_tbats, h=h)
 
 autoplot(train_ts) +
@@ -218,7 +303,7 @@ autoplot(train_ts) +
   ggtitle("TBATS Modeling")
 
 ```
-```{r}
+```{r, echo=FALSE}
 TBATS_accuracy <- accuracy(TBATS_for)
 print(TBATS_accuracy)
 ```
@@ -239,7 +324,7 @@ forecast_accuracy_SSES <- accuracy(SSES_seas)
 ```
 
 *Neural Network*
-```{r}
+```{r, echo=FALSE}
 NN_fit <- nnetar(train_ts,
                  p=1,
                  P=1,
@@ -265,7 +350,7 @@ checkresiduals(NN_fit)
 forecast_accuracy_NN <- accuracy(NN_for)
 ```
 *Create Scores*
-```{r}
+```{r, echo=FALSE}
 
 #Model 1: Sarima
 Sarima_scores <- accuracy(sarima_forecast$mean, test_ts) 
@@ -288,7 +373,7 @@ NN_scores <- accuracy(SSES_seas$forecast, test_ts)
 ```
 
 *Create Score table*
-```{r}
+```{r, echo=FALSE}
 scores <- as.data.frame(
   rbind(Sarima_scores, ArimaFour_scores, stlf_scores, TBATS_scores, SSES_scores, NN_scores)
   )
