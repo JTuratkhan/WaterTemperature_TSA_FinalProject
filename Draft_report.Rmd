@@ -6,6 +6,7 @@ output: pdf_document
 geometry: margin=2.54cm
 ---
 
+
 ```{r, echo=FALSE}
 library(ggplot2)
 library(readxl)
@@ -23,8 +24,18 @@ library(outliers)
 library(smooth)
 ```
 
-**Introduction**
 
+**Introduction**
+Marine microbe account for 50% of marine primary production and dominate the 
+biomass of the ocean. These organism are vital for life on earth and ocean 
+health but are at serious risk in high temperatures worsened by climate change. 
+The first step in supporting these ecological communities and hence mitigating 
+the damages done by climate change is to understand what future climate 
+scenarios look like. Predictions for future climate and temperature can varry by 
+up to 10 degrees (if not more). With so much uncertainty surrounding climate 
+future, it is of the utmost importance to have as much acurate modeling for 
+future climate scenarios and hence our group hopes to make reasonable forecasts 
+of surface water temperature at the Duke University Marine Lab research facility.  
 
 **Motivation/relevance of the study**
 Global ocean temperature is on the rise which has significant implications for 
@@ -33,12 +44,14 @@ primary production (of oxygen) is among the most important. In fact,
 approximately 50% of primary production of oxygen comes from marine 
 phytoplankton. It has been proven (largely through work by Duke University 
 Marine Lab's Dr. Zacakry Johnson and Dr. Dana Hunt) that these microbial 
-systems change significantly with seasonal changes (which include dominantly temperature changes, but also isolation and day length changes). These changes 
+systems change significantly with seasonal changes (which include dominantly 
+temperature changes, but also isolation and day length changes). These changes 
 alter the way that the ocean cycles nutrients, stores carbon, and produces 
-oxygen. Hence, temperature is an important variable in the consideration of 
-much ocean modeling. This highlights the importance of accurate temperature 
-prediction. Understanding what future climate and temperature looks like 
-allows for better prediction of what other ocean cycles will look like. 
+oxygen. Hence, temperature is an important variable in the consideration of much 
+ocean modeling. This highlights the importance of accurate temperature 
+prediction. Understanding what future climate and temperature looks like allows 
+for better prediction of what other ocean cycles will look like and how we may 
+excpet the serives we recieve from the ocean to change with the climate. 
 
 **Objectives**
 
@@ -50,8 +63,10 @@ time scales.
 
 The following data comes from a long running time series study out at Piver's 
 Island Coastal Observatory (PICO) which is located at the Duke University 
-Marine Lab. The sytudy monitors the ambient conditions such as turbidity, pH, temperature, and salinity. For this study, only temperature was able to be 
-included. The temperature is reported as mean monthly temperature. 
+Marine Lab conducted by Drs. Zackary Johnson and Dana Hunt. The sytudy monitors 
+the ambient conditions such as turbidity, pH, temperature, and salinity. For 
+this study, only temperature was able to be included. The temperature is 
+reported as mean monthly temperature. 
 
 **Methodology / Analysis**
 
@@ -65,7 +80,8 @@ The second consideration we would like to acknowledge that climate change is
 certainly a a factor that plays a role in shifting trends, seasonal components, 
 and general variability which may not be accurately reflected in our current 
 data set which spans only approximately 11 years. Though the temperature in the 
-region looks highly predictable, future predictions must be cognizant that large prediction horizons are unreasonable. 
+region looks highly predictable, future predictions must be cognizant that large 
+prediction horizons are unreasonable. 
 
 **Description**
 
@@ -80,10 +96,12 @@ ARIMA captures the autocorrelations in the data, while the Fourier terms allow
 for the approximation of seasonal cycles of various lengths and complexities. 
 This hybrid model is especially useful when the seasonality is not strictly 
 periodic or involves multiple frequencies.
-**3. TBATS model:** Designed for forecasting time series with intricate seasonal patterns, the TBATS model employs exponential smoothing as its core technique. 
+**3. TBATS model:** Designed for forecasting time series with intricate seasonal 
+patterns, the TBATS model employs exponential smoothing as its core technique. 
 It thoroughly explores a variety of specifications, including those with and 
 without a Box-Cox transformation, the presence or absence of a trend, trend 
-damping options, and an ARIMA(p,q) component for the residuals. The model also evaluates different harmonic levels for seasonalities. The best-fitting model 
+damping options, and an ARIMA(p,q) component for the residuals. The model also 
+evaluates different harmonic levels for seasonalities. The best-fitting model 
 is determined by the lowest Akaike Information Criterion (AIC).
 **4. ETS model:** This univariate forecasting method, known as Exponential 
 Smoothing State Space Model (ETS), emphasizes trend and seasonality components 
@@ -95,7 +113,8 @@ assumptions about the error terms, which aids in the computation of prediction
 intervals. It considers both additive and multiplicative error structures 
 within the state space modeling framework.
 **6. Neural Network:** The Neural Network model facilitates the identification 
-of complex and nonlinear relationships between the dependent variable and its predictors. Its versatile architecture can adapt to a wide array of data 
+of complex and nonlinear relationships between the dependent variable and its 
+predictors. Its versatile architecture can adapt to a wide array of data 
 patterns.
 
 ```{r, echo=FALSE}
@@ -106,7 +125,8 @@ patterns.
 
 ```{r, echo=FALSE}
 #We important the monthly temperature data
-file_path <- "/home/guest/TSA_Janka/WaterTemperature_TSA_FinalProject/Monthly Data_Temperature2011-2021.xlsx"
+file_path <-
+  "~/WaterTemperature_TSA_FinalProject/Monthly Data_Temperature2011-2021.xlsx"
 temperature_data <- read_excel(file_path, sheet = "Sheet1")
 ```
 
@@ -117,7 +137,7 @@ temperature_ts <- ts(temperature_data$Temperature,
 ```
 
 ```{r, echo=FALSE}
-#Upon initial examination, the data appears to be strongly seasonal with very little trend.
+#Upon initial examination, the data appears to be seasonal with little trend.
 plot(temperature_ts, main = "Original dataset")
 ```
 The temperature shows cyclical behavior with peaks and troughs that correspond 
@@ -133,7 +153,8 @@ periodicity inherent in the data.
 #The ACF and Pacf tell us that there is ovbious and strong seasonality and some auto-regressive component up to about 6 lags.
 P1 <-Acf(temperature_ts, main = "ACF on original data")
 ```
-The graph illustrates the Autocorrelation Function (ACF) applied to the original temperature data set. Autocorrelation is a mathematical representation of the 
+The graph illustrates the Autocorrelation Function (ACF) applied to the original 
+temperature data set. Autocorrelation is a mathematical representation of the 
 degree of similarity between a given time series and a lagged version of itself 
 over successive time intervals. The ACF is plotted against various lag values, 
 which span from 0 to 24.
@@ -142,14 +163,15 @@ while the x-axis represents the lag in terms of the number of time units. Each
 vertical bar corresponds to the autocorrelation coefficient at a specific lag.
 Notably, the graph shows a pattern of spikes at regular intervals, which 
 suggests a seasonal pattern in the data. The presence of these spikes at 
-consistent intervals can be indicative of the seasonality in the dataset, which correlates with the seasonal fluctuations seen in the time series plot of 
+consistent intervals can be indicative of the seasonality in the dataset, which 
+correlates with the seasonal fluctuations seen in the time series plot of 
 the original dataset.
 The blue dashed lines represent the significance bounds. Any spike that extends 
 beyond these bounds is considered statistically significant. In this ACF plot, 
 several lags have autocorrelation values that cross the significance threshold,
 confirming that the data exhibit a strong seasonal component at these lags.
 
-```{r, echo=FALSE}}
+```{r, echo=FALSE}
 P2 <- Pacf(temperature_ts, main = "PACF on original data")
 ```
 In this PACF plot, most of the spikes are within the significance bounds, 
@@ -171,7 +193,7 @@ The Augmented Dickey-Fuller Test result indicates a Dickey-Fuller statistic of
 hypothesis of a unit root can be rejected and the time series is stationary.
 ```{r, echo=FALSE}
 #confirming that timeseries transformation works as expected.
-#str(temperature_ts)
+str(temperature_ts)
 ```
 
 For the forecasting purposes, the data was split into training and test data
@@ -185,10 +207,10 @@ test_ts <- window(temperature_ts, start=c(2019, 9))
 
 ```{r, echo=FALSE}
 #Confirms Training and Test sets were correctly made
-#start(train_ts)
-#end(train_ts)
-#start(test_ts)
-#end(test_ts)
+start(train_ts)
+end(train_ts)
+start(test_ts)
+end(test_ts)
 ```
 
 *SARIMA Modeling*
@@ -375,11 +397,28 @@ NN_scores <- accuracy(SSES_seas$forecast, test_ts)
 *Create Score table*
 ```{r, echo=FALSE}
 scores <- as.data.frame(
-  rbind(Sarima_scores, ArimaFour_scores, stlf_scores, TBATS_scores, SSES_scores, NN_scores)
+  rbind(
+    Sarima_scores,
+    ArimaFour_scores,
+    stlf_scores,
+    TBATS_scores,
+    SSES_scores,
+    NN_scores
   )
-row.names(scores) <- c("Sarima", "ARIMA+Fourier","ETS+STL","TBATS","SSES", "NN")
+)
+row.names(scores) <-
+  c("Sarima", "ARIMA+Fourier", "ETS+STL", "TBATS", "SSES", "NN")
 
-best_model_index <- which.min(scores[,"RMSE"])
-cat("The best model by RMSE is:", row.names(scores[best_model_index,]))                       
+best_model_index <- which.min(scores[, "RMSE"])
+cat("The best model by RMSE is:", row.names(scores[best_model_index, ]))                       
 ```
 
+**Limitations**
+Though we have produced accurate models and forecasts, there are a few limitations to be aware of. The first is regarding our prediction time frame We only have access to ~ 10 years of data which likely does not demonstrate enough of a trend to be recognized as the role of climate change in our models. We should expect increasing temepratures in the future as a result of climate change. Even if our model did capture this linear trend, the modeling would be based on the assumtions that the trend is constant (aka that emissions causing climate change are to remain exactly as they are now, neither increasing nor decreasing). This limits further the time frame for which projections and models are viable. Finally, the resolution of our data is not ideal; we have monthly aggregate data so we are projecting out monthly as well. This is not as helpful as a finer resolution may have been given the fact that monthy aggregate data does not accurately reflect the extreme temeprature spikes we may see on specific days. In the future, it would be usely to repeat this modeling ideally with daily data. Even geting multiple temepratures a day could had more complexity as we should except to see patterns of temeprature changes throughout the day.
+
+**Selected Refrences**
+Johnson, Z. I., Wheeler, B. J., Blinebry, S. K., Carlson, C. M., Ward, C., & Hunt, D. E. (2013a). Dramatic variability of the carbonate system at a temperate coastal ocean site (Beaufort, North Carolina, USA) is regulated by physical and biogeochemical processes on multiple timescales. PloS One, 8(12), e85117. https://doi.org/10.1371/journal.pone.0085117
+
+McIntyre, A. D. (2010). Life in the world’s oceans. In Wiley eBooks. https://doi.org/10.1002/9781444325508
+
+Wang, Z., Tsementzi, D., Williams, T. C., Juarez, D. L., Blinebry, S. K., Garcia, N. S., Sienkiewicz, B. K., Konstantinidis, K. T., Johnson, Z. I., & Hunt, D. E. (2020a). Environmental stability impacts the differential sensitivity of marine microbiomes to increases in temperature and acidity. The ISME Journal, 15(1), 19–28. https://doi.org/10.1038/s41396-020-00748-2
