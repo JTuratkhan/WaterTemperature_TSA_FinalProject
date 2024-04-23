@@ -150,7 +150,7 @@ The regularity of the pattern would likely make it suitable for forecasting
 using seasonal models, such as SARIMA or TBATS, which could exploit the 
 periodicity inherent in the data.
 ```{r, echo=FALSE}
-#The ACF and Pacf tell us that there is ovbious and strong seasonality and some auto-regressive component up to about 6 lags.
+#The ACF and Pacf tell us that there is obvious and strong seasonality and some auto-regressive component up to about 6 lags.
 P1 <-Acf(temperature_ts, main = "ACF on original data")
 ```
 The graph illustrates the Autocorrelation Function (ACF) applied to the original 
@@ -387,10 +387,10 @@ stlf_scores <- accuracy(ETS_for$mean, test_ts)
 TBATS_scores <- accuracy(TBATS_for$mean, test_ts)
 
 # Model 5:  SSES 
-SSES_scores <- accuracy(NN_for$mean, test_ts)
+SSES_scores <- accuracy(SSES_seas$forecast, test_ts)
 
 # Model 6:  Neural Network 
-NN_scores <- accuracy(SSES_seas$forecast, test_ts)
+NN_scores <- accuracy(NN_for$mean, test_ts)
 
 ```
 
@@ -414,9 +414,12 @@ cat("The best model by RMSE is:", row.names(scores[best_model_index, ]))
 ```
 
 **Limitations**
-Though we have produced accurate models and forecasts, there are a few limitations to be aware of. The first is regarding our prediction time frame We only have access to ~ 10 years of data which likely does not demonstrate enough of a trend to be recognized as the role of climate change in our models. We should expect increasing temepratures in the future as a result of climate change. Even if our model did capture this linear trend, the modeling would be based on the assumtions that the trend is constant (aka that emissions causing climate change are to remain exactly as they are now, neither increasing nor decreasing). This limits further the time frame for which projections and models are viable. Finally, the resolution of our data is not ideal; we have monthly aggregate data so we are projecting out monthly as well. This is not as helpful as a finer resolution may have been given the fact that monthy aggregate data does not accurately reflect the extreme temeprature spikes we may see on specific days. In the future, it would be usely to repeat this modeling ideally with daily data. Even geting multiple temepratures a day could had more complexity as we should except to see patterns of temeprature changes throughout the day.
+Though we have produced accurate models and forecasts, there are a few limitations to be aware of. The first is regarding our prediction time frame We only have access to ~ 10 years of data which likely does not demonstrate enough of a trend to be recognized as the role of climate change in our models. We should expect increasing temperatures in the future as a result of climate change. Even if our model did capture this linear trend, the modeling would be based on the assumptions that the trend is constant (aka that emissions causing climate change are to remain exactly as they are now, neither increasing nor decreasing). This limits further the time frame for which projections and models are viable. Finally, the resolution of our data is not ideal; we have monthly aggregate data so we are projecting out monthly as well. This is not as helpful as a finer resolution may have been given the fact that monthly aggregate data does not accurately reflect the extreme temperature spikes we may see on specific days. In the future, it would be usely to repeat this modeling ideally with daily data. Even getting multiple temperatures a day could had more complexity as we should except to see patterns of temperature changes throughout the day.
 
-**Selected Refrences**
+**Conclusion**
+By modeling seawater surface temperature using six models and initially decomposing the data itself, we found that at least the ambient seawater surface temperature obtained from Duke Marine Lab did not show a clear upward trend during this decade. The conclusion seems somewhat inconsistent with the current impact of global climate change on seawater temperatures. However, this trend should be independent of our processing of the data, that is, averaging the weekly data into monthly data because the overall water temperature changes should not be diluted by just taking the monthly average. So, there may be something worth studying and discussing behind it. After comparing the errors of the six models with the original data, we finally found that the SSES model had the smallest error, which can provide a reference for subsequent researchers to choose water temperature modeling. Since we did not use other relevant variables as predictors, we believe that the current water temperature model still has much room for improvement.
+
+**Selected Refernces**
 Johnson, Z. I., Wheeler, B. J., Blinebry, S. K., Carlson, C. M., Ward, C., & Hunt, D. E. (2013a). Dramatic variability of the carbonate system at a temperate coastal ocean site (Beaufort, North Carolina, USA) is regulated by physical and biogeochemical processes on multiple timescales. PloS One, 8(12), e85117. https://doi.org/10.1371/journal.pone.0085117
 
 McIntyre, A. D. (2010). Life in the world’s oceans. In Wiley eBooks. https://doi.org/10.1002/9781444325508
